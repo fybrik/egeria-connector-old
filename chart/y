@@ -1,0 +1,96 @@
+install.go:178: [debug] Original chart version: ""
+install.go:199: [debug] CHART PATH: /home/eres/deleteme/egeria-connector/chart
+
+---
+# Source: egeria-connector/templates/egeria-connector-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: egeria-connector
+  labels:
+    app.kubernetes.io/component: egeria-connector
+    helm.sh/chart: egeria_connector_0.0.0
+    app.kubernetes.io/name: egeria-connector
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "master"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: egeria-connector/templates/egeria-connector-cm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: egeria-connector-config
+data:
+  EGERIA_SERVER_URL: "https://egeria-platform.egeria-catalog:9443"
+  CONNECTION_TIMEOUT: "120"
+  EGERIA_DEFAULT_USERNAME: "garygeeke"
+---
+# Source: egeria-connector/templates/egeria-connector-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "egeria-connector"
+  labels:
+    app.kubernetes.io/component: egeria-connector
+    helm.sh/chart: egeria_connector_0.0.0
+    app.kubernetes.io/name: egeria-connector
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "master"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/component: egeria-connector
+    app.kubernetes.io/name: egeria-connector
+    app.kubernetes.io/instance: RELEASE-NAME
+---
+# Source: egeria-connector/templates/egeria-connector-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egeria-connector
+  labels:
+    app.kubernetes.io/component: egeria-connector
+    helm.sh/chart: egeria_connector_0.0.0
+    app.kubernetes.io/name: egeria-connector
+    app.kubernetes.io/instance: RELEASE-NAME
+    app.kubernetes.io/version: "master"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: egeria-connector
+      app.kubernetes.io/name: egeria-connector
+      app.kubernetes.io/instance: RELEASE-NAME
+  template:
+    metadata:
+      labels:
+        egeriaConnector.io/componentType: connector
+        app.kubernetes.io/component: egeria-connector
+        app.kubernetes.io/name: egeria-connector
+        app.kubernetes.io/instance: RELEASE-NAME
+    spec:
+      serviceAccountName: egeria-connector
+      securityContext:
+        {}
+      containers:
+        - name: egeria-connector
+          securityContext:
+            {}
+          image: ghcr.io/fybrik/egr-connector:master
+          imagePullPolicy: 
+          ports:
+            - name: http
+              containerPort: 50084
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: egeria-connector-config
+          resources:
+            {}
