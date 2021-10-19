@@ -6,7 +6,7 @@ include $(ROOT_DIR)/hack/make-rules/docker.mk
 KUBE_NAMESPACE ?= fybrik-system
 
 .PHONY: docker-build
-docker-build: build
+docker-build:
 	make docker-build -C connector-src
 
 .PHONY: docker-push
