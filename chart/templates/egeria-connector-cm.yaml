@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: egeria-connector-config
+data:
+  EGERIA_SERVER_URL: {{ .Values.serverURL | quote }}
+  CONNECTION_TIMEOUT: {{ .Values.connectionTimeout | quote }}
+  EGERIA_DEFAULT_USERNAME: {{ .Values.username | quote }}

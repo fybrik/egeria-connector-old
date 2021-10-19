@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master 
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - master
+
+env:
+  JAVA_VERSION: 11
+  DOCKER_HOSTNAME: ghcr.io
+
+jobs:
+  push-dev-images:
+    name: Push Dev Images
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main repository
+      uses: actions/checkout@v2
+      with:
+        path: main
+    - name: Checkout fybrik repository
+      uses: actions/checkout@v2
+      with:
+        repository: fybrik/fybrik
+        path: fybrik-repo
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+    - name: Build docker image 
+      run: pushd main && PROTOSDIR=`pwd`/../fybrik-repo/pkg/connectors/protos make docker-build && popd
+    - name: Docker login
+      if: ${{ (github.event_name != 'pull_request') && !contains(github.ref, 'tags') }}
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u "fybrik" --password-stdin "${{ env.DOCKER_HOSTNAME }}"
+    - name: Docker push
+      if: ${{ (github.event_name != 'pull_request') && !contains(github.ref, 'tags') }}
+      run: pushd main && make docker-push && popd
+    - name: Helm login
+      if: ${{ (github.event_name != 'pull_request') && !contains(github.ref, 'tags') }}
+      run: export HELM_EXPERIMENTAL_OCI=1 && echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login -u "${{ github.actor }}" --password-stdin "${{ env.DOCKER_HOSTNAME }}"
+    - name: Helm chart push
+      if: ${{ (github.event_name != 'pull_request') && !contains(github.ref, 'tags') }}
+      run: export HELM_REPOSITORY=ghcr.io/fybrik/egeria-connector-chart && pushd main && make chart-push && popd

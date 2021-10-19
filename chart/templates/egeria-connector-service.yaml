@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "egeria-connector"
+  labels:
+    app.kubernetes.io/component: egeria-connector
+    {{- include "egeriaConnector.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/component: egeria-connector
+    {{- include "egeriaConnector.selectorLabels" . | nindent 4 }}
